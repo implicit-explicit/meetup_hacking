@@ -15,4 +15,4 @@ source /etc/profile
 wget https://raw.githubusercontent.com/pypa/pip/master/contrib/get-pip.py
 python get-pip.py
 
-pip install fabric
+pip install requests
