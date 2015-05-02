@@ -3,6 +3,7 @@
 <script src="./lib/vendor/d3.min.js"></script>
 <script src="./lib/vendor/d3.layout.min.js"></script>
 <script src="./lib/rickshaw.min.js"></script>
+<script src="./lib/async.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 
 <style>
@@ -43,31 +44,47 @@
 <script>
 
 var data_members = [];
+var series = [];
 
-$.getJSON("counts.json", function(json) {
+var groups = [
+    'ElasticSearch-NL',
+    'docker-randstad',
+    'DevOpsAmsterdam',
+    'Netherlands-Cassandra-Users',
+    'Software-Circus'
+];
 
-    $.each(json, function( key, val ) {
-        data_members.push( {x: parseInt(key, 10), y: val }  );
-        console.log(key, val)
+function load_single_group(json) {
+  var members = [];
+  $.each(json, function( key, val ) {
+      members.push( {x: parseInt(key, 10), y: val }  );
+  });
+  return members
+}
+
+async.map(groups, function (group, callback) {
+    $.getJSON("data/" + group + ".json", function(json) {
+        data_members = load_single_group(json)
+        callback(null, data_members);
     });
-
-    console.log(data_members); // this will show the info it in firebug console
-
+}, function (err, data) {
     var palette = new Rickshaw.Color.Palette();
+
+    var series = data.map(function(data_members, index) {
+        return {
+                            name: groups[index],
+                            //data: [ { x: -1893456000, y: 25868573 }, { x: -1577923200, y: 29662053 } ],
+                            data: data_members,
+                            color: palette.color()
+                    };
+    })
 
     var graph = new Rickshaw.Graph( {
             element: document.querySelector("#chart"),
             width: 540,
             height: 240,
             renderer: 'line',
-            series: [
-                    {
-                            name: "Northeast",
-                            //data: [ { x: -1893456000, y: 25868573 }, { x: -1577923200, y: 29662053 } ],
-                            data: data_members,
-                            color: palette.color()
-                    }
-            ]
+            series: series
     } );
 
     var x_axis = new Rickshaw.Graph.Axis.Time( { graph: graph } );
@@ -101,6 +118,5 @@ $.getJSON("counts.json", function(json) {
     }, false);
 
     graph.render();
-
 });
 </script>

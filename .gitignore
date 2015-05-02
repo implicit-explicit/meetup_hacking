@@ -1,3 +1,4 @@
 .vagrant/
 .idea/
 api_key
+code/visualization/data/
