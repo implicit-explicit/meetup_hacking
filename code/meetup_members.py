@@ -21,12 +21,12 @@ def main(argv):
 
 def get_members(api_key, group_urlname, page_size=200):
 
-    offset = 0
     results = None
     users = []
 
+    request_string = '{}{}?key={}&group_urlname={}&page={}'.format(api_url, query, api_key, group_urlname, page_size)
+
     while True:
-        request_string = '{}{}?key={}&group_urlname={}&page={}&offset={}'.format(api_url, query, api_key, group_urlname, page_size, offset)
 
         # print(request_string)
 
@@ -43,10 +43,14 @@ def get_members(api_key, group_urlname, page_size=200):
 
         # print(num)
 
-        if num != page_size:
+        try:
+            if len(results['meta']['next']) <= 0:
+                break
+        except e:
+            print(e)
             break
 
-        offset += 1
+        request_string = results['meta']['next']
 
     print(json.dumps(users, indent=2))
 
