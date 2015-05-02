@@ -47,6 +47,6 @@ cp <url_name>.json visualisation/data
 cd visualisation
 python -m SimpleHTTPServer
 ```
-2. Then in a browser navigate to http://localhost:8000/members.html
+2. Then in a browser navigate to [http://localhost:8000/members.html](http://localhost:8000/members.html)
 3. Kaboom!
 
