@@ -11,6 +11,8 @@ Vagrant.configure('2') do |config|
     vb.customize ['modifyvm', :id, '--ioapic', 'on']
   end
 
+  config.vm.network "forwarded_port", guest: 8000, host: 8000
+
   config.vm.provision :shell do |external_shell|
     external_shell.path = 'setup.sh'
   end
