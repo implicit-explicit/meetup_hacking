@@ -45,7 +45,7 @@ Now you have the member data for the specified group but before you have display
 mkdir visualisation/data
 cp <url_name>.json visualisation/data
 cd visualisation
-python -m SimpleHTTPServer
+python -m http.server 8000
 ```
 2. Then in a browser navigate to [http://localhost:8000/members.html](http://localhost:8000/members.html)
 3. Kaboom!
