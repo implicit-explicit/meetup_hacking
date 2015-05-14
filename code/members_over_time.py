@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from pprint import pprint
 import arrow
 import sys
 import json
