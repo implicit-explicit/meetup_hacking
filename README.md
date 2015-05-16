@@ -50,3 +50,10 @@ python -m http.server 8000
 2. Then in a browser navigate to [http://localhost:8000/members.html](http://localhost:8000/members.html)
 3. Kaboom!
 
+### Web version
+
+You can use the very basic web version by adding your API key in the meetup_members_web.py script and running it:
+
+```
+python meetup_members_web.py
+```
