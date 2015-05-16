@@ -12,7 +12,7 @@ app = Flask(__name__, static_url_path='')
 
 API_URL = 'https://api.meetup.com/2/'
 QUERY = 'members'
-API_KEY = '5c5b2c745132111c686cb32d136428'
+API_KEY = ''
 PAGE_SIZE = 200
 
 logger = app.logger
