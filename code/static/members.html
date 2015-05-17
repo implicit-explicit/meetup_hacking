@@ -34,10 +34,14 @@
         <div id="chart"></div>
         <div id="legend"></div>
         <form id="offset_form" class="toggler">
-                <input type="radio" name="offset" id="lines" value="lines" checked>
-                <label class="lines" for="lines">lines</label><br>
-                <input type="radio" name="offset" id="stack" value="zero">
-                <label class="stack" for="stack">stack</label>
+            <input type="radio" name="offset" id="lines" value="lines" checked>
+            <label class="lines" for="lines">lines</label><br>
+            <input type="radio" name="offset" id="stack" value="zero">
+            <label class="stack" for="stack">stack</label>
+        </form>
+        <form id="meetup_form" action="/meetup">
+            <input type="text" name="name">
+            <input type="submit" value="Submit">
         </form>
 </div>
 
@@ -46,13 +50,6 @@
 var data_members = [];
 var series = [];
 
-var groups = [
-    'ElasticSearch-NL',
-    'docker-randstad',
-    'DevOpsAmsterdam',
-    'Netherlands-Cassandra-Users',
-    'Software-Circus'
-];
 
 function load_single_group(json) {
   var members = [];
@@ -62,22 +59,19 @@ function load_single_group(json) {
   return members
 }
 
-async.map(groups, function (group, callback) {
-    $.getJSON("data/" + group + ".json", function(json) {
-        data_members = load_single_group(json)
-        callback(null, data_members);
-    });
-}, function (err, data) {
+function plot_meetup(err, data) {
     var palette = new Rickshaw.Color.Palette();
 
-    var series = data.map(function(data_members, index) {
-        return {
-                            name: groups[index],
-                            //data: [ { x: -1893456000, y: 25868573 }, { x: -1577923200, y: 29662053 } ],
-                            data: data_members,
-                            color: palette.color()
-                    };
-    })
+    var series = [];
+
+    for (var name in data) {
+
+        series.push({
+                    name: name,
+                    data: data[name],
+                    color: palette.color()
+                });
+    }
 
     var graph = new Rickshaw.Graph( {
             element: document.querySelector("#chart"),
@@ -118,5 +112,29 @@ async.map(groups, function (group, callback) {
     }, false);
 
     graph.render();
+}
+
+$("#meetup_form").submit(function (e) {
+
+    e.preventDefault();
+    var form_data = $("#meetup_form").serialize();
+    var values = {};
+    $.each($('#meetup_form').serializeArray(), function(i, field) {
+        values[field.name] = field.value;
+    });
+
+    console.log("Getting data for " + values['name'])
+
+    $.ajax({
+        url: '/meetup',
+        type: 'get',
+        data:  form_data,
+        success: function (data) {
+            var json_members = JSON.parse(data);
+            var all_meetups = {};
+            all_meetups[values['name']] = load_single_group(json_members);
+            plot_meetup(null, all_meetups);
+        }
+    });
 });
 </script>
