@@ -33,12 +33,6 @@
         <div id="y_axis"></div>
         <div id="chart"></div>
         <div id="legend"></div>
-        <form id="offset_form" class="toggler">
-            <input type="radio" name="offset" id="lines" value="lines" checked>
-            <label class="lines" for="lines">lines</label><br>
-            <input type="radio" name="offset" id="stack" value="zero">
-            <label class="stack" for="stack">stack</label>
-        </form>
         <form id="meetup_form" action="/meetup">
             <input type="text" name="name">
             <input type="submit" value="Submit">
@@ -59,19 +53,13 @@ function load_single_group(json) {
   return members
 }
 
-function plot_meetup(err, data) {
-    var palette = new Rickshaw.Color.Palette();
+var graph = null;
+
+function init_graph() {
+
+    console.log("Initializing graph");
 
     var series = [];
-
-    for (var name in data) {
-
-        series.push({
-                    name: name,
-                    data: data[name],
-                    color: palette.color()
-                });
-    }
 
     var graph = new Rickshaw.Graph( {
             element: document.querySelector("#chart"),
@@ -80,6 +68,8 @@ function plot_meetup(err, data) {
             renderer: 'line',
             series: series
     } );
+
+    graph.palette = new Rickshaw.Color.Palette();
 
     var x_axis = new Rickshaw.Graph.Axis.Time( { graph: graph } );
 
@@ -90,26 +80,31 @@ function plot_meetup(err, data) {
             element: document.getElementById('y_axis'),
     } );
 
-    var legend = new Rickshaw.Graph.Legend( {
+    graph.legend = new Rickshaw.Graph.Legend( {
             element: document.querySelector('#legend'),
             graph: graph
     } );
 
-    var offsetForm = document.getElementById('offset_form');
 
-    offsetForm.addEventListener('change', function(e) {
-            var offsetMode = e.target.value;
+    return graph;
+}
 
-            if (offsetMode == 'lines') {
-                    graph.setRenderer('line');
-                    graph.offset = 'zero';
-            } else {
-                    graph.setRenderer('stack');
-                    graph.offset = offsetMode;
-            }
-            graph.render();
+function plot_meetup(err, name, data) {
 
-    }, false);
+    console.log("Plotting graph for " + name);
+
+    if (graph == null) {
+        graph = init_graph();
+    }
+
+    var group_series = {
+                name: name,
+                data: data,
+                color: graph.palette.color()
+    };
+
+    graph.series.push(group_series);
+    graph.legend.addLine(group_series);
 
     graph.render();
 }
@@ -131,9 +126,7 @@ $("#meetup_form").submit(function (e) {
         data:  form_data,
         success: function (data) {
             var json_members = JSON.parse(data);
-            var all_meetups = {};
-            all_meetups[values['name']] = load_single_group(json_members);
-            plot_meetup(null, all_meetups);
+            plot_meetup(null, values['name'], load_single_group(json_members));
         }
     });
 });
