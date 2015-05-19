@@ -52,8 +52,8 @@ python -m http.server 8000
 
 ### Web version
 
-You can use the very basic web version by adding your API key in the meetup_members_web.py script and running it:
+You can use the very basic web version by navigating to /vagrant/code/meetup_members_web, adding your API key in the config.py script, and running the start_app.sh script:
 
 ```
-python meetup_members_web.py
+./start_app.sh
 ```
