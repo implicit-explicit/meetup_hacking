@@ -4,6 +4,7 @@
     <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/rickshaw/1.5.1/rickshaw.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
     <script src="/lib/vendor/d3.layout.min.js"></script>
+    <script src="/lib/venn.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/rickshaw/1.5.1/rickshaw.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 
@@ -11,20 +12,70 @@
 </head>
 <body>
 <div id="chart_container">
-        <div id="y_axis"></div>
-        <div id="chart"></div>
-        <div id="legend"></div>
-        <form id="meetup_form" action="/meetup">
-            <input type="text" name="name">
-            <input type="submit" value="Submit">
-        </form>
+    <div id="y_axis"></div>
+    <div id="chart"></div>
+    <div id="legend"></div>
+    <form id="meetup_form" action="/meetup">
+        <input type="text" name="name">
+        <input type="submit" value="Submit">
+    </form>
+</div>
+
+<div id="venn_container">
+
 </div>
 
 <script>
 
-var groups = [];
+var groups = {};
 var series = [];
+var venn_groups = [];
 
+function k_combinations(set, k) {
+	var i, j, combs, head, tailcombs;
+
+	if (k > set.length || k <= 0) {
+		return [];
+	}
+
+	if (k == set.length) {
+		return [set];
+	}
+
+	if (k == 1) {
+		combs = [];
+		for (i = 0; i < set.length; i++) {
+			combs.push([set[i]]);
+		}
+		return combs;
+	}
+
+	// Assert {1 < k < set.length}
+
+	combs = [];
+	for (i = 0; i < set.length - k + 1; i++) {
+		head = set.slice(i, i+1);
+		tailcombs = k_combinations(set.slice(i + 1), k - 1);
+		for (j = 0; j < tailcombs.length; j++) {
+			combs.push(head.concat(tailcombs[j]));
+		}
+	}
+	return combs;
+}
+
+function combinations(set) {
+	var k, i, combs, k_combs;
+	combs = [];
+
+	// Calculate all non-empty k-combinations
+	for (k = 1; k <= set.length; k++) {
+		k_combs = k_combinations(set, k);
+		for (i = 0; i < k_combs.length; i++) {
+			combs.push(k_combs[i]);
+		}
+	}
+	return combs;
+}
 
 function load_single_group(json) {
   var members = [];
@@ -43,11 +94,11 @@ function init_graph() {
     var series = [];
 
     var graph = new Rickshaw.Graph( {
-            element: document.querySelector("#chart"),
-            width: 540,
-            height: 240,
-            renderer: 'line',
-            series: series
+        element: document.querySelector("#chart"),
+        width: 540,
+        height: 240,
+        renderer: 'line',
+        series: series
     } );
 
     graph.palette = new Rickshaw.Color.Palette();
@@ -55,22 +106,22 @@ function init_graph() {
     var x_axis = new Rickshaw.Graph.Axis.Time( { graph: graph } );
 
     var y_axis = new Rickshaw.Graph.Axis.Y( {
-            graph: graph,
-            orientation: 'left',
-            tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
-            element: document.getElementById('y_axis'),
+        graph: graph,
+        orientation: 'left',
+        tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+        element: document.getElementById('y_axis'),
     } );
 
     graph.legend = new Rickshaw.Graph.Legend( {
-            element: document.querySelector('#legend'),
-            graph: graph
+        element: document.querySelector('#legend'),
+        graph: graph
     } );
 
 
     return graph;
 }
 
-function plot_meetup(err, name, data) {
+function plot_meetups(err, name, data) {
 
     console.log("Plotting graph for " + name);
 
@@ -79,15 +130,53 @@ function plot_meetup(err, name, data) {
     }
 
     var group_series = {
-                name: name,
-                data: data,
-                color: graph.palette.color()
+        name: name,
+        data: data,
+        color: graph.palette.color()
     };
 
     graph.series.push(group_series);
     graph.legend.addLine(group_series);
 
     graph.render();
+}
+
+function common_members(group_names) {
+    var ids = [];
+    for (var i = 0; i < group_names.length; i++) {
+        ids.push(groups[group_names[i]]['ids']);
+    }
+
+    var result = ids.shift().filter(function(v) {
+        return ids.every(function(a) {
+            return a.indexOf(v) !== -1;
+        });
+    });
+
+    return result
+
+}
+
+function plot_venn(name, data) {
+
+    var venn_sets = [];
+
+    venn_groups.push(name);
+    var combs = combinations(venn_groups);
+    for (var i = 0; i < combs.length; i++){
+        if (combs[i].length < 2) {
+            var group_name = combs[i][0];
+            venn_sets.push({sets: combs[i], label: group_name, size: groups[group_name]['ids'].length})
+        } else {
+            var intersection = common_members(combs[i]);
+            venn_sets.push({sets: combs[i], size: intersection.length})
+        }
+    }
+
+    console.log('Adding ' + name + ' to the venn diagram');
+
+    var chart = venn.VennDiagram();
+    d3.select("#venn_container").datum(venn_sets).call(chart);
 }
 
 $("#meetup_form").submit(function (e) {
@@ -98,8 +187,9 @@ $("#meetup_form").submit(function (e) {
     $.each($('#meetup_form').serializeArray(), function(i, field) {
         values[field.name] = field.value;
     });
+    var name = values['name'];
 
-    console.log("Getting data for " + values['name']);
+    console.log("Getting data for " + name);
 
     $.ajax({
         url: '/meetup',
@@ -107,9 +197,10 @@ $("#meetup_form").submit(function (e) {
         data:  form_data,
         success: function (data) {
             var group_data = JSON.parse(data);
-            console.log("Received data for " + values['name']);
-            groups.push(group_data);
-            plot_meetup(null, values['name'], load_single_group(group_data['membership']));
+            console.log("Received data for " + name);
+            groups[name] = group_data;
+            plot_meetups(null, values['name'], load_single_group(group_data['membership']));
+            plot_venn(values['name'], group_data);
         }
     });
 });
