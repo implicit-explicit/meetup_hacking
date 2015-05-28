@@ -1,209 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/rickshaw/1.5.1/rickshaw.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
-    <script src="/lib/vendor/d3.layout.min.js"></script>
-    <script src="/lib/venn.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/rickshaw/1.5.1/rickshaw.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <title>PinPoint</title>
+
+        <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/rickshaw/1.5.1/rickshaw.min.css">
+        <link type="text/css" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+        <link type="text/css" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.1/simplex/bootstrap.min.css" >
+        <link type="text/css" rel="stylesheet" media="all" href="./stylesheets/application.css" >
+
+    </head>
+    <body>
+
+        <nav class="navbar navbar-default navbar-static-top">
+            <div class="container">
+                <div class="navbar-header">
+                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                  </button>
+                  <a class="navbar-brand" href="/">PinPoint</a>
+                </div>
+                <div id="navbar" class="collapse navbar-collapse">
+                  <ul class="nav navbar-nav">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/about">About</a></li>
+
+                  </ul>
+                </div>
+            </div>
+        </nav>
 
 
-</head>
-<body>
-<div id="chart_container">
-    <div id="y_axis"></div>
-    <div id="chart"></div>
-    <div id="legend"></div>
-    <form id="meetup_form" action="/meetup">
-        <input type="text" name="name">
-        <input type="submit" value="Submit">
-    </form>
-</div>
+        <div class="container">
+            <div class="row">
+                <form class="col-md-3" id="meetup_form" action="/meetup">
+                        <input type="text" name="name">
+                        <input type="submit" value="Add">
+                </form>
+                <div class="col-md-9">
+                    <div id="chart_container">
+                        <div id="y_axis"></div>
+                        <div id="chart"></div>
+                        <div id="legend"></div>
+                    </div>
 
-<div id="venn_container">
+                    <div id="venn_container">
 
-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<script>
-
-var groups = {};
-var series = [];
-var venn_groups = [];
-
-function k_combinations(set, k) {
-	var i, j, combs, head, tailcombs;
-
-	if (k > set.length || k <= 0) {
-		return [];
-	}
-
-	if (k == set.length) {
-		return [set];
-	}
-
-	if (k == 1) {
-		combs = [];
-		for (i = 0; i < set.length; i++) {
-			combs.push([set[i]]);
-		}
-		return combs;
-	}
-
-	// Assert {1 < k < set.length}
-
-	combs = [];
-	for (i = 0; i < set.length - k + 1; i++) {
-		head = set.slice(i, i+1);
-		tailcombs = k_combinations(set.slice(i + 1), k - 1);
-		for (j = 0; j < tailcombs.length; j++) {
-			combs.push(head.concat(tailcombs[j]));
-		}
-	}
-	return combs;
-}
-
-function combinations(set) {
-	var k, i, combs, k_combs;
-	combs = [];
-
-	// Calculate all non-empty k-combinations
-	for (k = 1; k <= set.length; k++) {
-		k_combs = k_combinations(set, k);
-		for (i = 0; i < k_combs.length; i++) {
-			combs.push(k_combs[i]);
-		}
-	}
-	return combs;
-}
-
-function load_single_group(json) {
-  var members = [];
-  $.each(json, function( key, val ) {
-      members.push( {x: parseInt(key, 10), y: val }  );
-  });
-  return members
-}
-
-var graph = null;
-
-function init_graph() {
-
-    console.log("Initializing graph");
-
-    var series = [];
-
-    var graph = new Rickshaw.Graph( {
-        element: document.querySelector("#chart"),
-        width: 540,
-        height: 240,
-        renderer: 'line',
-        series: series
-    } );
-
-    graph.palette = new Rickshaw.Color.Palette();
-
-    var x_axis = new Rickshaw.Graph.Axis.Time( { graph: graph } );
-
-    var y_axis = new Rickshaw.Graph.Axis.Y( {
-        graph: graph,
-        orientation: 'left',
-        tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
-        element: document.getElementById('y_axis'),
-    } );
-
-    graph.legend = new Rickshaw.Graph.Legend( {
-        element: document.querySelector('#legend'),
-        graph: graph
-    } );
-
-
-    return graph;
-}
-
-function plot_meetups(err, name, data) {
-
-    console.log("Plotting graph for " + name);
-
-    if (graph == null) {
-        graph = init_graph();
-    }
-
-    var group_series = {
-        name: name,
-        data: data,
-        color: graph.palette.color()
-    };
-
-    graph.series.push(group_series);
-    graph.legend.addLine(group_series);
-
-    graph.render();
-}
-
-function common_members(group_names) {
-    var ids = [];
-    for (var i = 0; i < group_names.length; i++) {
-        ids.push(groups[group_names[i]]['ids']);
-    }
-
-    var result = ids.shift().filter(function(v) {
-        return ids.every(function(a) {
-            return a.indexOf(v) !== -1;
-        });
-    });
-
-    return result
-
-}
-
-function plot_venn(name, data) {
-
-    var venn_sets = [];
-
-    venn_groups.push(name);
-    var combs = combinations(venn_groups);
-    for (var i = 0; i < combs.length; i++){
-        if (combs[i].length < 2) {
-            var group_name = combs[i][0];
-            venn_sets.push({sets: combs[i], label: group_name, size: groups[group_name]['ids'].length})
-        } else {
-            var intersection = common_members(combs[i]);
-            venn_sets.push({sets: combs[i], size: intersection.length})
-        }
-    }
-
-    console.log('Adding ' + name + ' to the venn diagram');
-
-    var chart = venn.VennDiagram();
-    d3.select("#venn_container").datum(venn_sets).call(chart);
-}
-
-$("#meetup_form").submit(function (e) {
-
-    e.preventDefault();
-    var form_data = $("#meetup_form").serialize();
-    var values = {};
-    $.each($('#meetup_form').serializeArray(), function(i, field) {
-        values[field.name] = field.value;
-    });
-    var name = values['name'];
-
-    console.log("Getting data for " + name);
-
-    $.ajax({
-        url: '/meetup',
-        type: 'get',
-        data:  form_data,
-        success: function (data) {
-            var group_data = JSON.parse(data);
-            console.log("Received data for " + name);
-            groups[name] = group_data;
-            plot_meetups(null, values['name'], load_single_group(group_data['membership']));
-            plot_venn(values['name'], group_data);
-        }
-    });
-});
-</script>
-</body>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/rickshaw/1.5.1/rickshaw.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+        <script src="/js/vendor/d3.layout.min.js"></script>
+        <script src="/js/venn.js"></script>
+        <script src="/js/app.js"></script>
+    </body>
 </html>
