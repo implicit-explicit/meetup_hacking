@@ -1,5 +1,8 @@
 # Created by https://www.gitignore.io
 
+# Data
+*.json
+
 .vagrant/
 .idea/
 meetup_hacking_scripts/code/visualization/data/
