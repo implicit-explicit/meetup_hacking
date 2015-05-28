@@ -80,15 +80,23 @@ def members_over_time(members):
 
     return buckets
 
+def member_ids(members):
+    return list(map((lambda x: x['id']), members))
+
 
 @app.route('/meetup')
 def get_meetup_members():
     name = request.args.get('name')
     logger.info('Pulling info for group {}'.format(name))
+
     members = get_members(app.config['API_KEY'], name, app.config['PAGE_SIZE'])
+
     members_series = members_over_time(members)
+    members_ids = member_ids(members)
+    members_data = {'membership': members_series, 'ids': members_ids}
+
     logger.info('Finished request for group {}'.format(name))
-    return json.dumps(members_series)
+    return json.dumps(members_data)
 
 
 @app.route("/")

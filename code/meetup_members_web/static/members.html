@@ -7,7 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/rickshaw/1.5.1/rickshaw.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 
-    <link href="./stylesheets/application.css" rel="stylesheet" media="all">
+
 </head>
 <body>
 <div id="chart_container">
@@ -22,7 +22,7 @@
 
 <script>
 
-var data_members = [];
+var groups = [];
 var series = [];
 
 
@@ -99,15 +99,17 @@ $("#meetup_form").submit(function (e) {
         values[field.name] = field.value;
     });
 
-    console.log("Getting data for " + values['name'])
+    console.log("Getting data for " + values['name']);
 
     $.ajax({
         url: '/meetup',
         type: 'get',
         data:  form_data,
         success: function (data) {
-            var json_members = JSON.parse(data);
-            plot_meetup(null, values['name'], load_single_group(json_members));
+            var group_data = JSON.parse(data);
+            console.log("Received data for " + values['name']);
+            groups.push(group_data);
+            plot_meetup(null, values['name'], load_single_group(group_data['membership']));
         }
     });
 });
