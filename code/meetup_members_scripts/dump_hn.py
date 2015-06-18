@@ -78,7 +78,8 @@ def save_item(id):
     text = item.get('text', None)
     title = item.get('title', None)
     url = item.get('url', None)
-    time = datetime.fromtimestamp(item['time'])
+    time_unix = item.get('time', 0)
+    time = datetime.fromtimestamp(time_unix)
     if item.get('deleted', None):
         print('Skipping item {}'.format(item['id']))
     else:
