@@ -72,22 +72,28 @@ def get_items(min_id, max_id):
 
 def save_item(id):
     item = get_item(id)
+    if not item:
+        item = {'id': 0, 'by': '_failed'}
     descendants = item.get('descendants', 0)
     kids = item.get('kids', None)
     score = item.get('score', None)
     text = item.get('text', None)
     title = item.get('title', None)
     url = item.get('url', None)
+    type = item.get('type', None)
     time_unix = item.get('time', 0)
     time = datetime.fromtimestamp(time_unix)
     if item.get('deleted', None):
         print('Skipping item {}'.format(item['id']))
     else:
-        print('Saving item {} with data: {}'.format(item['id'], str(item)))
-        es_item = Item(hnid=item['id'], user=item['by'], descendants=descendants, kids=kids, score=score, text=text,
-                       time=time, title=title, type=item['type'], url=url)
-        es_item.save()
-    return item['id']
+        try:
+            print('Saving item {} with data: {}'.format(item['id'], str(item)))
+            es_item = Item(hnid=item['id'], user=item['by'], descendants=descendants, kids=kids, score=score, text=text,
+                           time=time, title=title, type=type, url=url)
+            es_item.save()
+        except KeyError:
+            print('Item with missing fields: {}'.format(str(item)))
+    return id
 
 
 if __name__ == "__main__":
