@@ -22,6 +22,8 @@ python get-pip.py
 
 pip install requests
 pip install arrow
+pip install gunicorn
+pip install flask
 
 # Allow incomming connections to port 8000
 iptables -A IN_public_allow -p tcp --dport 8000 -j ACCEPT
