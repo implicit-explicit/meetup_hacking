@@ -42,8 +42,8 @@ Now you have the member data for the specified group but before you have display
 
 1. Copy your new JSON file into the _data_ directory
 ```
-mkdir visualisation/data
-cp <url_name>.json visualisation/data
+mkdir visualization/data
+cp <url_name>.json visualization/data
 cd visualisation
 python -m http.server 8000
 ```
